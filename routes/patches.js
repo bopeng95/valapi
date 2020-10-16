@@ -1,22 +1,23 @@
 const express = require('express');
-const fetch = require('node-fetch');
 
-const { domain } = require('../utils/fixtures');
-const { getPatches, handleSuccess } = require('../utils/helpers');
+const { fetchPatches, fetchDetails } = require('../utils/helpers');
 
 const router = express.Router();
 
-const listPatches = (req, res) => {
+const listPatches = async (req, res) => {
   const { lang = 'en-us' } = req.query;
-  return fetch(`${domain}/${lang}/news/`)
-    .then((response) => response.text())
-    .then((body) => {
-      const patches = getPatches(body);
-      const data = handleSuccess(patches);
-      return res.json(data);
-    });
+  const data = await fetchPatches(lang, res);
+  return res.json(data);
+};
+
+const listRecent = async (req, res) => {
+  const { lang = 'en-us' } = req.query;
+  const { data } = await fetchPatches(lang);
+  const recent = await fetchDetails(data[0], res);
+  return res.json(recent);
 };
 
 router.get('/', listPatches);
+router.get('/recent', listRecent);
 
 module.exports = router;
