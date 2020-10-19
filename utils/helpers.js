@@ -1,12 +1,13 @@
 const fetch = require('node-fetch');
 const cheerio = require('cheerio');
 
-const { queries, domain, patchOnly } = require('./fixtures');
+const { params, paths, domain, patchOnly } = require('./fixtures');
 
-const handleError = (error) => ({ queries, status: 404, error });
+const handleError = (error) => ({ paths, params, status: 404, error });
 const handleSuccess = (data) => ({
   data,
-  queries,
+  paths,
+  params,
   status: 200,
   error: '',
 });

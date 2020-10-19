@@ -8,7 +8,7 @@ const { redirect, checkQueries } = require('./utils/middlewares');
 const { handleError } = require('./utils/helpers');
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -19,6 +19,8 @@ app.use(checkQueries);
 
 app.use('/patches', patchRouter);
 
-app.get('/*', (req, res) => res.json(handleError('Invalid path')));
+app.get('/*', (req, res) =>
+  res.json(handleError('Invalid path. See paths for more details')),
+);
 
 app.listen(PORT, () => console.log(`Listening on port ${PORT}`));

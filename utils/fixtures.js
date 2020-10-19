@@ -1,7 +1,7 @@
 const domain = 'https://playvalorant.com';
 const patchOnly = '/news/game-updates/valorant';
 
-const queries = {
+const params = {
   lang: {
     default: 'en-us',
     options: {
@@ -12,4 +12,9 @@ const queries = {
   },
 };
 
-module.exports = { queries, domain, patchOnly };
+const paths = {
+  '/patches': 'list of available patches',
+  '/patches/recent': 'displays the most recent patch details',
+};
+
+module.exports = { params, paths, domain, patchOnly };

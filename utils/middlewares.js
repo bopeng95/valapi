@@ -1,4 +1,4 @@
-const { queries } = require('./fixtures');
+const { params } = require('./fixtures');
 const { handleError } = require('./helpers');
 
 const redirect = (req, res, next) => {
@@ -9,8 +9,10 @@ const redirect = (req, res, next) => {
 
 const checkQueries = (req, res, next) => {
   const { lang = 'en-us' } = req.query;
-  if (!queries.lang.options[lang])
-    return res.json(handleError('Invalid lang. See queries for more details'));
+  if (!params.lang.options[lang])
+    return res.json(
+      handleError('Invalid parameter. See params for more details'),
+    );
   return next();
 };
 
