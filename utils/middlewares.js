@@ -10,9 +10,14 @@ const redirect = (req, res, next) => {
 const checkQueries = (req, res, next) => {
   const { lang = 'en-us' } = req.query;
   if (!params.lang.options[lang])
-    return res.json(
-      handleError('Invalid parameter. See params for more details'),
-    );
+    return res
+      .status(404)
+      .json(
+        handleError(
+          'Invalid parameter. See params for more details',
+          res.statusCode,
+        ),
+      );
   return next();
 };
 

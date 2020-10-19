@@ -12,7 +12,7 @@ const listPatches = async (req, res) => {
 
 const listRecent = async (req, res) => {
   const { lang = 'en-us' } = req.query;
-  const { data } = await fetchPatches(lang);
+  const { data } = await fetchPatches(lang, res);
   const recent = await fetchDetails(data[0], res);
   return res.json(recent);
 };
