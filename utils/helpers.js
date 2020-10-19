@@ -11,6 +11,18 @@ const handleSuccess = (data) => ({
   error: '',
 });
 
+const removeDub = (list) => {
+  const set = new Set();
+  let i = 0;
+  while (i < list.length) {
+    if (set.has(list[i]) || !list[i]) list.splice(i, 1);
+    else {
+      set.add(list[i]);
+      i += 1;
+    }
+  }
+};
+
 const getPatches = (body) => {
   const $ = cheerio.load(body);
   const news = $('.NewsArchive-module--newsCard--3GNFp');
@@ -26,8 +38,13 @@ const getPatches = (body) => {
       const date = $(link)
         .find('.copy-02 .NewsCard-module--published--37jmR')
         .text();
-      const patch = $(link).find('.NewsCard-module--title--1MoLu').text();
-      const result = { href, date, patch };
+      const description = $(link).find('.NewsCard-module--title--1MoLu').text();
+      const result = {
+        href,
+        date,
+        description,
+        patch: href.substring(46, href.length - 1),
+      };
       return result;
     })
     .get();
@@ -37,18 +54,13 @@ const getPatches = (body) => {
 const getDetails = (body) => {
   const $ = cheerio.load(body);
   const parent = $('.NewsArticleContent-module--articleSectionWrapper--3SR6V');
-  const firstChild = parent.children()[0];
-
-  let key = 'Entry';
-  let sub = '';
-  const data = {};
+  const content = parent.children();
 
   // highlight image
-  const highlightImg = $(firstChild).find('img');
+  const highlightImg = $(content[0]).find('img');
   const hasHL = highlightImg.attr('alt').includes('Highlights');
   const src = highlightImg.attr('src');
   const highlight = hasHL ? src : '';
-  // console.log($(firstChild).text());
 
   const extractList = (main, elem) => {
     const items = $(elem).children();
@@ -57,39 +69,71 @@ const getDetails = (body) => {
       if (tag === 'ul') extractList(main, el);
       else {
         const list = $(el).find('ul');
-        if (list.html()) {
-          main.push($(el).find('strong').text());
+        const strong = $(el).find('strong').text();
+        if (list.html() && !!strong) {
+          main.push(strong);
           extractList(main, list);
-        } else main.push($(el).text());
+        } else {
+          const text = $(el)
+            .text()
+            .replace(/[\n\t]/g, '');
+          if (text) main.push(text);
+        }
       }
     });
   };
 
-  $(firstChild)
-    .children()
-    .each((i, el) => {
-      const list = [];
-      const tag = el.tagName;
-      const hasStrong = $(el).children()[0];
-      let text = $(el).text();
-      if (tag === 'h2') {
-        key = text;
-        sub = '';
-      }
-      if (tag === 'h3') sub = text;
-      if (tag === 'p' && hasStrong && hasStrong.name === 'strong') sub = text;
-      if (tag === 'img') text = $(el).attr('src');
-      if (tag === 'ul') extractList(list, el);
+  const extractTable = (main, elem) => {
+    const list = $(elem).find('ul');
+    extractList(main, list);
+  };
 
-      if (!data[key]) data[key] = {};
-      if (sub && !data[key][sub]) data[key][sub] = {};
+  const extractData = (node) => {
+    let key = 'Entry';
+    const data = {};
+    $(node)
+      .children()
+      .each((i, el) => {
+        const list = [];
+        const tag = el.tagName;
+        let text = $(el).text();
 
-      const value = list.length ? list : text;
-      if (sub) data[key][sub][tag] = value;
-      else data[key][tag] = value;
-    });
+        if (tag.startsWith('h')) key = text;
+        if (tag === 'div') {
+          key = 'Video';
+          text = $(el).find('iframe').attr('src');
+        }
+        if (tag === 'a') text = $(el).attr('href');
+        if (tag === 'img') text = $(el).attr('src');
+        if (tag === 'ul') extractList(list, el);
+        if (tag === 'table') {
+          extractTable(list, el);
+          removeDub(list);
+        }
+        if (tag === 'p') list.push(text);
 
-  return { highlight, notes: data };
+        if (!data[key]) data[key] = {};
+
+        const value = list.length ? list : text;
+        if (!tag.startsWith('h') && tag !== 'br') {
+          if ((tag === 'p' || tag === 'ul') && data[key][tag]) {
+            if (tag === 'p') data[key][tag] = data[key][tag].concat(value);
+          } else data[key][tag] = value;
+        }
+      });
+    return data;
+  };
+
+  const arr = content
+    .map((i, el) => {
+      const data = extractData(el);
+      return data;
+    })
+    .get();
+
+  const notes = arr.reduce((result, item) => ({ ...result, ...item }), {});
+
+  return { highlight, notes };
 };
 
 const fetchPatches = (lang, res) => {
@@ -104,12 +148,12 @@ const fetchPatches = (lang, res) => {
 };
 
 const fetchDetails = (data, res) => {
-  const { href, date } = data;
+  const { href, ...rest } = data;
   return fetch(`${domain}${href}`)
     .then((response) => response.text())
     .then((body) => {
       const details = getDetails(body);
-      return handleSuccess({ ...details, date });
+      return handleSuccess({ ...details, ...rest });
     })
     .catch((err) => res.json(handleError(err.message)));
 };

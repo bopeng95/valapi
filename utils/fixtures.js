@@ -6,6 +6,8 @@ const queries = {
     default: 'en-us',
     options: {
       'en-us': 'English (United States)',
+      'ko-kr': 'Korean (Korea)',
+      'ja-jp': 'Japanese (Japan)',
     },
   },
 };
