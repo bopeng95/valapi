@@ -49,9 +49,11 @@ const getDetails = (body) => {
 
   // highlight image
   const highlightImg = $(content[0]).find('img');
-  const hasHL = highlightImg.attr('alt').includes('Highlights');
+  const hasHL = highlightImg.attr('alt')
+    ? highlightImg.attr('alt').includes('Highlights')
+    : null;
   const src = highlightImg.attr('src');
-  const highlight = hasHL ? src : '';
+  const highlight = hasHL ? src : 'No highlight image';
 
   const extractList = (main, elem) => {
     const items = $(elem).children();
